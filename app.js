@@ -16,8 +16,8 @@ app.use(express.static("public"));
 const mongoURI = "mongodb://127.0.0.1:27017/studentDB";
 mongoose.connect(mongoURI, { useNewUrlParser: true });
 
-const accountSid = "AC33cd83e62d42751e089bebf8d5ced21d";
-const authToken = "05f8cdb08928a61542681c47e2dc5c9c";
+const accountSid = "ID";
+const authToken = "TOKEN";
 const client = require('twilio')(accountSid, authToken);
 
 const studentSchema = {
@@ -149,7 +149,7 @@ app.get("/otp_verify", function (req, res) {
     client.messages
         .create({
             body: otp,
-            from: '+13515296727',
+            from: 'NUM',
             to: '+918495086756'
         })
         .then(message => console.log(message.sid));
