@@ -16,6 +16,10 @@ app.use(express.static("public"));
 const mongoURI = "mongodb://127.0.0.1:27017/studentDB";
 mongoose.connect(mongoURI, { useNewUrlParser: true });
 
+const accountSid = "AC33cd83e62d42751e089bebf8d5ced21d";
+const authToken = "05f8cdb08928a61542681c47e2dc5c9c";
+const client = require('twilio')(accountSid, authToken);
+
 const studentSchema = {
     name: {
         type: String,
@@ -91,7 +95,7 @@ app.post("/signup", function (req, res) {
     //         // }
     //     });
     // }
-    if(list.adhaarNumber < 100_000_000_000 || list.adhaarNumber > 999_999_999_999){
+    if (list.adhaarNumber < 100_000_000_000 || list.adhaarNumber > 999_999_999_999) {
         res.render("signup", { errorMessage: "Please enter the adhaar num" });
     }
     if (list.phoneNumber < 1_000_000_000 || list.phoneNumber > 9_999_999_999) {
@@ -107,23 +111,63 @@ app.post("/signup", function (req, res) {
             phoneNumber: list.phoneNumber,
             degree: list.degree,
         });
-        // student1.save();
+        student1.save();
         res.redirect("/login");
     }
 });
 
 app.get("/login", function (req, res) {
-    res.render("login", {errorMessage: ""});
+    res.render("login", { errorMessage: "" });
 });
 
 app.post("/login", function (req, res) {
     const list = req.body;
-    if (list.adhaarNumber < 100_000_000_000 || list.adhaarNumber > 999_999_999_999){
+    var phoneNumber = 1234123412;
+    if (list.adhaarNumber < 100_000_000_000 || list.adhaarNumber > 999_999_999_999) {
         res.render("login", { errorMessage: "Please enter the adhaar num" });
     }
     else {
-    res.redirect("/portal");
+        Student.find({ adhaarNumber: list.adhaarNumber }, function (err, students) {
+            if (err) {
+                console.log("Error Occured");
+            }
+            else if (typeof window !== 'undefined') {
+                phoneNumber = students[0].phoneNumber;
+                sessionStorage.setItem("PhoneNum", phoneNumber);
+            }
+        });
+        res.redirect("/otp_verify");
     }
+});
+
+app.get("/otp_verify", function (req, res) {
+    res.render("otp_login", { errorMessage: "" });
+    if (typeof window !== 'undefined') {
+        var phoneNumber = sessionStorage.getItem("phoneNum");
+    }
+    var otp = Math.floor(Math.random() * 1000000);
+    client.messages
+        .create({
+            body: otp,
+            from: '+13515296727',
+            to: '+918495086756'
+        })
+        .then(message => console.log(message.sid));
+    if (typeof window !== 'undefined') {
+        sessionStorage.clear();
+        sessionStorage.setItem("OTP", otp);
+    }
+});
+
+app.post("/otp_verify", function (req, res) {
+    var otp;
+    if (typeof window !== 'undefined') {
+        otp = sessionStorage.getItem("OTP");
+    }
+    if (req.body.otp === otp) {
+        res.render("otp_login", { errorMessage: "enter correct OTP" });
+    }
+    res.redirect("/portal");
 });
 
 app.get("/portal", function (req, res) {
